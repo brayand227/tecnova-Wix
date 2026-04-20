@@ -1,139 +1,69 @@
-import wixData from 'wix-data';
+// pages/home.js
+import { getAllCategories } from 'backend/categories.jsw';
+import { getAllProducts, searchProducts } from 'backend/products.jsw';
+import wixLocation from 'wix-location';
 
-let todasLasCategorias = [];
-let todosLosProductos = [];
+let allProducts = [];
 
-$w.onReady(function () {
-
-    // =========================
-    // CARGAR CATEGORÍAS
-    // =========================
-    wixData.query("Categorias")
-        .ascending("orden")
-        .find()
-        .then((results) => {
-            todasLasCategorias = results.items;
-
-            $w("#repeaterCategorias").data = todasLasCategorias;
-
-            // IMPORTANTE: renderizar cada item
-            $w("#repeaterCategorias").onItemReady(($item, itemData) => {
-                $item("#txtCategoria").text = itemData.nombre;
-
-                // Evento click categoría
-                $item("#txtCategoria").onClick(() => {
-                    filtrarPorCategoria(itemData._id);
-                });
-            });
-        });
-
-    // =========================
-    // CARGAR PRODUCTOS
-    // =========================
-    cargarProductos();
-
-    // =========================
-    // EVENTOS
-    // =========================
-
-    $w("#btnBuscar").onClick(() => {
-        const termino = ($w("#inputBusqueda").value || "").toLowerCase();
-        buscarProductos(termino);
-    });
-
-    $w("#dropdownOrden").onChange(() => {
-        const criterio = $w("#dropdownOrden").value;
-        ordenarProductos(criterio);
-    });
-
-    $w("#inputBusqueda").onKeyPress((event) => {
-        if (event.key === "Enter") {
-            buscarProductos(($w("#inputBusqueda").value || "").toLowerCase());
-        }
-    });
+$w.onReady(async () => {
+    await loadCategories();
+    await loadProducts();
+    setupEventListeners();
 });
 
-// =========================
-// CARGAR PRODUCTOS
-// =========================
-function cargarProductos() {
-    wixData.query("Productos")
-        .find()
-        .then((results) => {
-            todosLosProductos = results.items;
-
-            renderProductos(todosLosProductos);
+async function loadCategories() {
+    const categories = await getAllCategories();
+    $w('#categoriesRepeater').data = categories;
+    
+    // Configurar clic en cada categoría
+    $w('#categoriesRepeater').onItemReady(($item, itemData) => {
+        $item('#categoryCard').onClick(() => {
+            wixLocation.to(`/categoria/${itemData._id}`);
         });
-}
-
-// =========================
-// RENDERIZAR PRODUCTOS
-// =========================
-function renderProductos(productos) {
-
-    $w("#repeaterProductos").data = productos;
-
-    $w("#repeaterProductos").onItemReady(($item, itemData) => {
-        $item("#txtNombre").text = itemData.nombre;
-        $item("#txtPrecio").text = `$${itemData.precio}`;
-
-        if (itemData.imagen) {
-            $item("#imgProducto").src = itemData.imagen;
-        }
     });
 }
 
-// =========================
-// BUSCAR PRODUCTOS
-// =========================
-function buscarProductos(termino) {
-
-    if (!termino) {
-        renderProductos(todosLosProductos);
-        return;
-    }
-
-    const filtrados = todosLosProductos.filter(producto =>
-        (producto.nombre && producto.nombre.toLowerCase().includes(termino)) ||
-        (producto.descripcion && producto.descripcion.toLowerCase().includes(termino))
-    );
-
-    renderProductos(filtrados);
+async function loadProducts() {
+    allProducts = await getAllProducts();
+    $w('#productsRepeater').data = allProducts;
+    
+    // Hacer los productos clickeables
+    $w('#productsRepeater').onItemReady(($item, itemData) => {
+        $item('#productCard').onClick(() => {
+            wixLocation.to(`/producto/${itemData._id}`);
+        });
+    });
 }
 
-// =========================
-// ORDENAR PRODUCTOS
-// =========================
-function ordenarProductos(criterio) {
-
-    let productosOrdenados = [...$w("#repeaterProductos").data];
-
-    switch (criterio) {
-        case "precio_asc":
-            productosOrdenados.sort((a, b) => (a.precio || 0) - (b.precio || 0));
-            break;
-
-        case "precio_desc":
-            productosOrdenados.sort((a, b) => (b.precio || 0) - (a.precio || 0));
-            break;
-
-        default:
-            productosOrdenados.sort((a, b) =>
-                (a.nombre || "").localeCompare(b.nombre || "")
-            );
-    }
-
-    renderProductos(productosOrdenados);
-}
-
-// =========================
-// FILTRAR POR CATEGORÍA
-// =========================
-function filtrarPorCategoria(categoriaId) {
-
-    const filtrados = todosLosProductos.filter(producto =>
-        producto.categoria === categoriaId
-    );
-
-    renderProductos(filtrados);
+function setupEventListeners() {
+    // Buscador
+    $w('#searchInput').onKeyPress(async (event) => {
+        if (event.key === 'Enter') {
+            const term = $w('#searchInput').value;
+            const results = await searchProducts(term);
+            $w('#productsRepeater').data = results;
+        }
+    });
+    
+    // Ordenar
+    $w('#orderSelect').onChange(() => {
+        const order = $w('#orderSelect').value;
+        let sorted = [...$w('#productsRepeater').data];
+        
+        if (order === 'price-asc') {
+            sorted.sort((a, b) => a.precio - b.precio);
+        } else if (order === 'price-desc') {
+            sorted.sort((a, b) => b.precio - a.precio);
+        } else {
+            sorted.sort((a, b) => a.nombre.localeCompare(b.nombre));
+        }
+        
+        $w('#productsRepeater').data = sorted;
+    });
+    
+    // Limpiar búsqueda
+    $w('#clearSearch').onClick(async () => {
+        $w('#searchInput').value = '';
+        $w('#productsRepeater').data = allProducts;
+    });
 }

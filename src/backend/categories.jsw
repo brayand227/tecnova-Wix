@@ -1,0 +1,43 @@
+// backend/categories.jsw
+import wixData from 'wix-data';
+import { webMethod } from 'wix-web-module';
+
+// Obtener todas las categorías
+export const getAllCategories = webMethod(async () => {
+    const results = await wixData.query('Categorias')
+        .ascending('orden')
+        .find();
+    return results.items;
+});
+
+// Obtener categoría por ID
+export const getCategoryById = webMethod(async (id) => {
+    return await wixData.get('Categorias', id);
+});
+
+// Crear nueva categoría
+export const createCategory = webMethod(async (categoryData) => {
+    return await wixData.insert('Categorias', categoryData);
+});
+
+// Actualizar categoría
+export const updateCategory = webMethod(async (id, categoryData) => {
+    return await wixData.update('Categorias', {
+        ...categoryData,
+        _id: id
+    });
+});
+
+// Eliminar categoría
+export const deleteCategory = webMethod(async (id) => {
+    // Primero verificar si tiene productos asociados
+    const products = await wixData.query('Productos')
+        .eq('categoria', id)
+        .find();
+    
+    if (products.items.length > 0) {
+        throw new Error(`No se puede eliminar: tiene ${products.items.length} productos asociados`);
+    }
+    
+    return await wixData.remove('Categorias', id);
+});

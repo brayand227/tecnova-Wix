@@ -1,0 +1,62 @@
+// backend/products.jsw
+import wixData from 'wix-data';
+import { webMethod } from 'wix-web-module';
+
+// Obtener todos los productos
+export const getAllProducts = webMethod(async () => {
+    const results = await wixData.query('Productos')
+        .descending('destacado')
+        .find();
+    return results.items;
+});
+
+// Obtener productos por categoría
+export const getProductsByCategory = webMethod(async (categoryId) => {
+    const results = await wixData.query('Productos')
+        .eq('categoria', categoryId)
+        .find();
+    return results.items;
+});
+
+// Obtener productos destacados
+export const getFeaturedProducts = webMethod(async () => {
+    const results = await wixData.query('Productos')
+        .eq('destacado', true)
+        .find();
+    return results.items;
+});
+
+// Obtener producto por ID
+export const getProductById = webMethod(async (id) => {
+    return await wixData.get('Productos', id);
+});
+
+// Crear nuevo producto
+export const createProduct = webMethod(async (productData) => {
+    // Procesar colores si vienen como string
+    if (typeof productData.colores === 'string') {
+        productData.colores = productData.colores.split(',').map(c => c.trim());
+    }
+    return await wixData.insert('Productos', productData);
+});
+
+// Actualizar producto
+export const updateProduct = webMethod(async (id, productData) => {
+    return await wixData.update('Productos', {
+        ...productData,
+        _id: id
+    });
+});
+
+// Eliminar producto
+export const deleteProduct = webMethod(async (id) => {
+    return await wixData.remove('Productos', id);
+});
+
+// Buscar productos
+export const searchProducts = webMethod(async (searchTerm) => {
+    const results = await wixData.query('Productos')
+        .contains('nombre', searchTerm)
+        .find();
+    return results.items;
+});

@@ -1,0 +1,23 @@
+// backend/upload.jsw
+import { webMethod } from 'wix-web-module';
+import { upload as wixUpload } from 'wix-media';
+
+export const uploadImage = webMethod(async (fileData, fileName) => {
+    try {
+        // fileData debe ser un archivo en base64
+        const uploadedFile = await wixUpload(fileData, {
+            fileName: fileName,
+            mimeType: 'image/jpeg'
+        });
+        
+        return {
+            success: true,
+            url: uploadedFile.url
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+});

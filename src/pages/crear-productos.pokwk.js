@@ -1,10 +1,33 @@
-// API Reference: https://www.wix.com/velo/reference/api-overview/introduction
-// “Hello, World!” Example: https://learn-code.wix.com/en/article/hello-world
+// pages/admin/create-product.js
+import { getAllCategories } from 'backend/categories.jsw';
+import { createProduct } from 'backend/products.jsw';
+import wixLocation from 'wix-location';
 
-$w.onReady(function () {
-    // Write your JavaScript here
-
-    // To select an element by ID use: $w('#elementID')
-
-    // Click 'Preview' to run your code
+$w.onReady(async () => {
+    // Cargar categorías para el dropdown
+    const categories = await getAllCategories();
+    $w('#categorySelect').options = categories.map(cat => ({
+        label: cat.titulo,
+        value: cat._id
+    }));
+    
+    setupFormSubmission();
 });
+
+function setupFormSubmission() {
+    $w('#submitBtn').onClick(async () => {
+        const productData = {
+            nombre: $w('#nameInput').value,
+            descripcion: $w('#descriptionInput').value,
+            precio: parseFloat($w('#priceInput').value),
+            categoria: $w('#categorySelect').value,
+            destacado: $w('#featuredCheckbox').checked,
+            stock: parseInt($w('#stockInput').value) || 0,
+            colores: $w('#colorsInput').value.split(',').map(c => c.trim()),
+            imagenPrincipal: $w('#imageUpload').value
+        };
+        
+        await createProduct(productData);
+        wixLocation.to('dashboard');
+    });
+}

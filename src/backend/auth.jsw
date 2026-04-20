@@ -1,0 +1,27 @@
+// backend/auth.jsw
+import { authentication } from 'wix-members';
+import { webMethod } from 'wix-web-module';
+
+export const login = webMethod(async (email, password) => {
+    try {
+        const result = await authentication.login(email, password);
+        return { success: true, member: result.member };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+export const isAdmin = webMethod(async () => {
+    try {
+        const member = await authentication.getCurrentMember();
+        const roles = await member.getRoles();
+        return roles.includes('Admin');
+    } catch {
+        return false;
+    }
+});
+
+export const logout = webMethod(async () => {
+    await authentication.logout();
+    return { success: true };
+});
