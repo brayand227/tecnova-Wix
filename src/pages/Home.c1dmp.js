@@ -6,76 +6,68 @@ import wixLocation from 'wix-location';
 let allProducts = [];
 
 $w.onReady(async () => {
+    console.log('=== INICIANDO HOME ===');
+    
+    // Reemplaza 'TU_ID_REPEATER_CATEGORIAS' con el ID real de tu repeater de categorías
+    // Reemplaza 'TU_ID_REPEATER_PRODUCTOS' con el ID real de tu repeater de productos
+    
+    const categoriesRepeaterId = 'categoriesRepeater'; // 👈 CAMBIA ESTO POR EL ID REAL
+    const productsRepeaterId = 'productsRepeater';   // 👈 CAMBIA ESTO POR EL ID REAL
+    
+    // Verificar que los elementos existen
+    console.log('Buscando repeater:', categoriesRepeaterId);
+    console.log('Existe?', $w(categoriesRepeaterId).length);
+    
     try {
-        // Verificar que los elementos existen
-        console.log('Verificando elementos:');
-        console.log('categoriesRepeater existe:', $w('#categoriesRepeater').length > 0);
-        console.log('productsRepeater existe:', $w('#productsRepeater').length > 0);
-        
-        await loadCategories();
-        await loadProducts();
-        setupEventListeners();
+        await loadCategories(categoriesRepeaterId);
+        await loadProducts(productsRepeaterId);
+        setupEventListeners(productsRepeaterId);
     } catch (error) {
         console.error('Error al cargar la página:', error);
     }
 });
 
-async function loadCategories() {
+async function loadCategories(repeaterId) {
     const categories = await getAllCategories();
-    console.log('Categorías cargadas:', categories);
+    console.log('Categorías cargadas:', categories.length);
     
-    const repeater = $w('#categoriesRepeater');
+    const repeater = $w(repeaterId);
     if (repeater.length === 0) {
-        console.error('No se encontró el repeater de categorías con ID: categoriesRepeater');
+        console.error(`No se encontró el repeater con ID: ${repeaterId}`);
         return;
     }
     
     repeater.data = categories;
     
-    // Configurar clic en cada categoría
+    // Hacer clickeable cada ítem del repeater
     repeater.onItemReady(($item, itemData) => {
-        // Asegúrate de que el elemento dentro del repeater tenga ID 'categoryCard'
-        const card = $item('#categoryCard');
-        if (card.length > 0) {
-            card.onClick(() => {
-                wixLocation.to(`/categoria/${itemData._id}`);
-            });
-        } else {
-            // Si no hay un elemento específico, hacer click en toda la fila del repeater
-            $item.onClick(() => {
-                wixLocation.to(`/categoria/${itemData._id}`);
-            });
-        }
+        // Hacer que toda la fila sea clickeable
+        $item.onClick(() => {
+            wixLocation.to(`/categoria/${itemData._id}`);
+        });
     });
 }
 
-async function loadProducts() {
+async function loadProducts(repeaterId) {
     allProducts = await getAllProducts();
-    console.log('Productos cargados:', allProducts);
+    console.log('Productos cargados:', allProducts.length);
     
-    const repeater = $w('#productsRepeater');
+    const repeater = $w(repeaterId);
     if (repeater.length === 0) {
-        console.error('No se encontró el repeater de productos con ID: productsRepeater');
+        console.error(`No se encontró el repeater con ID: ${repeaterId}`);
         return;
     }
     
     repeater.data = allProducts;
     
     repeater.onItemReady(($item, itemData) => {
-        const card = $item('#productCard');
-        if (card.length > 0) {
-            card.onClick(() => {
-                wixLocation.to(`/producto/${itemData._id}`);
-            });
-        } else {
-            $item.onClick(() => {
-                wixLocation.to(`/producto/${itemData._id}`);
-            });
-        }
+        $item.onClick(() => {
+            wixLocation.to(`/producto/${itemData._id}`);
+        });
     });
 }
 
-function setupEventListeners() {
+function setupEventListeners(productsRepeaterId) {
     // Buscador
     const searchInput = $w('#searchInput');
     if (searchInput.length > 0) {
@@ -83,7 +75,7 @@ function setupEventListeners() {
             if (event.key === 'Enter') {
                 const term = searchInput.value;
                 const results = await searchProducts(term);
-                $w('#productsRepeater').data = results;
+                $w(productsRepeaterId).data = results;
             }
         });
     }
@@ -93,7 +85,7 @@ function setupEventListeners() {
     if (orderSelect.length > 0) {
         orderSelect.onChange(() => {
             const order = orderSelect.value;
-            let sorted = [...$w('#productsRepeater').data];
+            let sorted = [...$w(productsRepeaterId).data];
             
             if (order === 'price-asc') {
                 sorted.sort((a, b) => a.precio - b.precio);
@@ -103,7 +95,7 @@ function setupEventListeners() {
                 sorted.sort((a, b) => a.nombre.localeCompare(b.nombre));
             }
             
-            $w('#productsRepeater').data = sorted;
+            $w(productsRepeaterId).data = sorted;
         });
     }
     
@@ -112,7 +104,7 @@ function setupEventListeners() {
     if (clearBtn.length > 0) {
         clearBtn.onClick(async () => {
             $w('#searchInput').value = '';
-            $w('#productsRepeater').data = allProducts;
+            $w(productsRepeaterId).data = allProducts;
         });
     }
 }
