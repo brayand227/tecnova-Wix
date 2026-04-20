@@ -6,16 +6,20 @@ import wixLocation from 'wix-location';
 let allProducts = [];
 
 $w.onReady(async () => {
-    await loadCategories();
-    await loadProducts();
-    setupEventListeners();
+    try {
+        await loadCategories();
+        await loadProducts();
+        setupEventListeners();
+    } catch (error) {
+        console.error('Error al cargar la página:', error);
+    }
 });
 
 async function loadCategories() {
     const categories = await getAllCategories();
+    console.log('Categorías cargadas:', categories);
     $w('#categoriesRepeater').data = categories;
     
-    // Configurar clic en cada categoría
     $w('#categoriesRepeater').onItemReady(($item, itemData) => {
         $item('#categoryCard').onClick(() => {
             wixLocation.to(`/categoria/${itemData._id}`);
@@ -25,9 +29,9 @@ async function loadCategories() {
 
 async function loadProducts() {
     allProducts = await getAllProducts();
+    console.log('Productos cargados:', allProducts);
     $w('#productsRepeater').data = allProducts;
     
-    // Hacer los productos clickeables
     $w('#productsRepeater').onItemReady(($item, itemData) => {
         $item('#productCard').onClick(() => {
             wixLocation.to(`/producto/${itemData._id}`);
@@ -36,7 +40,6 @@ async function loadProducts() {
 }
 
 function setupEventListeners() {
-    // Buscador
     $w('#searchInput').onKeyPress(async (event) => {
         if (event.key === 'Enter') {
             const term = $w('#searchInput').value;
@@ -45,7 +48,6 @@ function setupEventListeners() {
         }
     });
     
-    // Ordenar
     $w('#orderSelect').onChange(() => {
         const order = $w('#orderSelect').value;
         let sorted = [...$w('#productsRepeater').data];
@@ -61,7 +63,6 @@ function setupEventListeners() {
         $w('#productsRepeater').data = sorted;
     });
     
-    // Limpiar búsqueda
     $w('#clearSearch').onClick(async () => {
         $w('#searchInput').value = '';
         $w('#productsRepeater').data = allProducts;

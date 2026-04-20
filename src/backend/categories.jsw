@@ -1,36 +1,29 @@
 // backend/categories.jsw
 import wixData from 'wix-data';
-import { webMethod } from 'wix-web-module';
 
-// Obtener todas las categorías
-export const getAllCategories = webMethod(async () => {
+export async function getAllCategories() {
     const results = await wixData.query('Categorias')
         .ascending('orden')
         .find();
     return results.items;
-});
+}
 
-// Obtener categoría por ID
-export const getCategoryById = webMethod(async (id) => {
+export async function getCategoryById(id) {
     return await wixData.get('Categorias', id);
-});
+}
 
-// Crear nueva categoría
-export const createCategory = webMethod(async (categoryData) => {
+export async function createCategory(categoryData) {
     return await wixData.insert('Categorias', categoryData);
-});
+}
 
-// Actualizar categoría
-export const updateCategory = webMethod(async (id, categoryData) => {
+export async function updateCategory(id, categoryData) {
     return await wixData.update('Categorias', {
         ...categoryData,
         _id: id
     });
-});
+}
 
-// Eliminar categoría
-export const deleteCategory = webMethod(async (id) => {
-    // Primero verificar si tiene productos asociados
+export async function deleteCategory(id) {
     const products = await wixData.query('Productos')
         .eq('categoria', id)
         .find();
@@ -40,4 +33,4 @@ export const deleteCategory = webMethod(async (id) => {
     }
     
     return await wixData.remove('Categorias', id);
-});
+}
